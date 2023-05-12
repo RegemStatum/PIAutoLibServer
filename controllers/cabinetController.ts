@@ -36,6 +36,7 @@ const setLedsToNewState = (
     if (ledNumbersToChange.includes(gpioLed.gpio))
       gpioLed.writeSync(newLedsState);
   });
+  console.log("new leds state: ", gpioLeds);
 };
 
 const openCabinets = (req: Request, res: Response) => {
@@ -43,6 +44,7 @@ const openCabinets = (req: Request, res: Response) => {
   const cabinetsToOpen = body.cabinets;
 
   const ledNumbers = findLedNumbersMatchedToCabinets(cabinetsToOpen);
+  console.log("led numbers: ", ledNumbers);
   setLedsToNewState(gpioLeds, ledNumbers, 1);
 
   res.status(200).json({ msg: "Cabinets opened", cabinets: cabinetsToOpen });
@@ -53,6 +55,7 @@ const closeCabinets = (req: Request, res: Response) => {
   const cabinetsToClose = body.cabinets;
 
   const ledNumbers = findLedNumbersMatchedToCabinets(cabinetsToClose);
+  console.log("led numbers: ", ledNumbers);
   setLedsToNewState(gpioLeds, ledNumbers, 0);
 
   res.status(200).json({ msg: "Cabinets closed", cabinets: cabinetsToClose });
