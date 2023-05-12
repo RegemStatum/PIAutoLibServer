@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Gpio } from "onoff";
 import { LEDS_TO_CABINETS } from "../constants/index.js";
+import BadRequestError from "../errors/BadRequestError.js";
 
 // onoff Gpio class type declaration is not full.
 // Instances of this class have keys such as "gpio" key.
@@ -27,38 +28,69 @@ const findLedNumbersMatchedToCabinets = (cabinets: number[]) => {
   );
 };
 
+const findCabinetMatchedToLedNumber = (ledNumber: number) => {
+  return LEDS_TO_CABINETS.find((obj) => obj.led === ledNumber)?.cabinet;
+};
+
 const setLedsToNewState = (
   leds: any[],
   ledNumbersToChange: number[],
   newLedsState: 0 | 1
 ) => {
   leds.forEach((gpioLed) => {
-    if (ledNumbersToChange.includes(gpioLed.gpio))
-      gpioLed.writeSync(newLedsState);
+    const gpio = gpioLed._gpio;
+    const isGpioToChange = ledNumbersToChange.includes(gpio);
+    if (!isGpioToChange) return;
+
+    // check if any of gpios to change is already in new state
+    if (gpioLed.readSync() === newLedsState) {
+      const cabinet = findCabinetMatchedToLedNumber(gpio);
+      throw new BadRequestError(
+        `Gpio ${gpio} is already ${
+          newLedsState === 1 ? "on" : "off"
+        }. Cabinet ${cabinet} is already ${
+          newLedsState === 1 ? "opened" : "closed"
+        }`
+      );
+    }
+
+    // set gpios to change in new state
+    gpioLed.writeSync(newLedsState);
   });
-  console.log("new leds state: ", gpioLeds);
+  return;
 };
 
 const openCabinets = (req: Request, res: Response) => {
-  const body = req.body;
-  const cabinetsToOpen = body.cabinets;
+  try {
+    const body = req.body;
+    const cabinetsToOpen = body.cabinets;
 
-  const ledNumbers = findLedNumbersMatchedToCabinets(cabinetsToOpen);
-  console.log("led numbers: ", ledNumbers);
-  setLedsToNewState(gpioLeds, ledNumbers, 1);
-
-  res.status(200).json({ msg: "Cabinets opened", cabinets: cabinetsToOpen });
+    const ledNumbers = findLedNumbersMatchedToCabinets(cabinetsToOpen);
+    setLedsToNewState(gpioLeds, ledNumbers, 1);
+    res.status(200).json({ msg: "Cabinets opened", cabinets: cabinetsToOpen });
+  } catch (e: any) {
+    console.log(e);
+    res.status(e.status || 500).json({
+      msg: e.message || "Something went wrong while opening cabinets",
+    });
+  }
 };
 
 const closeCabinets = (req: Request, res: Response) => {
-  const body = req.body;
-  const cabinetsToClose = body.cabinets;
+  try {
+    const body = req.body;
+    const cabinetsToClose = body.cabinets;
 
-  const ledNumbers = findLedNumbersMatchedToCabinets(cabinetsToClose);
-  console.log("led numbers: ", ledNumbers);
-  setLedsToNewState(gpioLeds, ledNumbers, 0);
+    const ledNumbers = findLedNumbersMatchedToCabinets(cabinetsToClose);
+    setLedsToNewState(gpioLeds, ledNumbers, 0);
 
-  res.status(200).json({ msg: "Cabinets closed", cabinets: cabinetsToClose });
+    res.status(200).json({ msg: "Cabinets closed", cabinets: cabinetsToClose });
+  } catch (e: any) {
+    console.log(e);
+    res.status(e.status || 500).json({
+      msg: e.message || "Something went wrong while opening cabinets",
+    });
+  }
 };
 
 export { openCabinets, closeCabinets };
