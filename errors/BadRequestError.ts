@@ -1,4 +1,4 @@
-import CustomApiError from "./CustomApiError";
+import CustomApiError from "./CustomApiError.js";
 
 class BadRequestError extends CustomApiError {
   constructor(message: string) {
