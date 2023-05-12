@@ -1,5 +1,3 @@
-import { Gpio } from "onoff";
-
 export const LEDS_TO_CABINETS = [
   { led: 17, cabinet: 1 },
   { led: 27, cabinet: 2 },
@@ -11,5 +9,3 @@ export const LEDS_TO_CABINETS = [
   { led: 20, cabinet: 8 },
   { led: 21, cabinet: 9 },
 ];
-
-export const GpioLeds: Gpio[] = [];
